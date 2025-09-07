@@ -1,0 +1,279 @@
+openapi: 3.0.3
+info:
+  title: TODO管理アプリケーション API
+  description: シンプルなTODO管理アプリケーションのREST API
+  version: 1.0.0
+  
+servers:
+  - url: http://localhost:3000/api
+    description: 開発サーバー
+
+paths:
+  /tasks:
+    get:
+      summary: タスク一覧取得
+      description: 登録されている全てのタスクを取得する
+      parameters:
+        - name: orderBy
+          in: query
+          description: ソート順序
+          required: false
+          schema:
+            type: string
+            enum: [created, dueDate]
+            default: created
+        - name: completed
+          in: query
+          description: 完了状態でフィルタ
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: タスク一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: 新しいタスクを作成
+      description: タスク内容と期限日を指定してタスクを作成する
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: タスク作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: リクエストデータが不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{id}:
+    get:
+      summary: 特定のタスクを取得
+      description: IDを指定してタスクの詳細を取得する
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: タスク詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: タスクが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: タスクを更新
+      description: 既存のタスクの内容、期限日、進捗、完了状態を更新する
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: タスク更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: リクエストデータが不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: タスクが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: タスクを削除
+      description: 指定されたIDのタスクを削除する
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '204':
+          description: タスク削除成功
+        '404':
+          description: タスクが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: タスクの一意識別子
+          example: 1
+        title:
+          type: string
+          description: タスクの内容
+          maxLength: 500
+          example: "プロジェクトの企画書を作成する"
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+          description: 期限日 (ISO 8601 format)
+          example: "2025-09-15"
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: 進捗率 (0-100%)
+          example: 50
+        completed:
+          type: boolean
+          description: 完了状態
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+          example: "2025-09-07T10:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+          example: "2025-09-07T15:45:00.000Z"
+      required:
+        - id
+        - title
+        - progress
+        - completed
+        - createdAt
+        - updatedAt
+
+    CreateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: タスクの内容
+          minLength: 1
+          maxLength: 500
+          example: "プロジェクトの企画書を作成する"
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+          description: 期限日 (ISO 8601 format)
+          example: "2025-09-15"
+      required:
+        - title
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: タスクの内容
+          minLength: 1
+          maxLength: 500
+          example: "プロジェクトの企画書を作成する"
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+          description: 期限日 (ISO 8601 format)
+          example: "2025-09-15"
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: 進捗率 (0-100%)
+          example: 75
+        completed:
+          type: boolean
+          description: 完了状態
+          example: true
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: エラーメッセージ
+          example: "タスクが見つかりません"
+        code:
+          type: string
+          description: エラーコード
+          example: "TASK_NOT_FOUND"
+      required:
+        - error
