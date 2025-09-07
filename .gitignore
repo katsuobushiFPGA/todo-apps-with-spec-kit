@@ -1,4 +1,7 @@
 backend/data/*
 backend/node_modules/*
 frontend/node_modules/*
+*.db
+*.sqlite
+*.sqlite3
 !.gitignore
