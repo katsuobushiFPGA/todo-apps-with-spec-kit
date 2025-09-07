@@ -1,7 +1,20 @@
 {
-  "name": "frontend",
+  "name": "todo-frontend",
+  "private": true,
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
+  "description": "Vue 3 + Vite frontend for TODO application",
+  "author": "TODO App Team",
+  "license": "MIT",
+  "keywords": ["vue", "vite", "todo", "task-management", "frontend"],
+  "homepage": "https://github.com/your-org/todo-app#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/todo-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/todo-app/issues"
+  },
   "directories": {
     "test": "tests"
   },
@@ -9,13 +22,21 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "serve": "vite preview",
+    "lint": "eslint . --ext vue,js,jsx,cjs,mjs,ts,tsx,cts,mts --fix --ignore-path .gitignore",
+    "lint:check": "eslint . --ext vue,js,jsx,cjs,mjs,ts,tsx,cts,mts --ignore-path .gitignore",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
+    "clean": "rm -rf dist node_modules/.vite",
+    "clean:deps": "rm -rf node_modules package-lock.json && npm install",
+    "analyze": "npx vite-bundle-analyzer dist/stats.html",
+    "start": "npm run dev"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "vue": "^3.5.21"
   },
@@ -25,5 +46,19 @@
     "happy-dom": "^18.0.1",
     "vite": "^7.1.4",
     "vitest": "^3.2.4"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "volta": {
+    "node": "18.19.0",
+    "npm": "10.2.4"
   }
 }
