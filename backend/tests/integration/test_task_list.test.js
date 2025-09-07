@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import App from '../../src/app.js';
 
-const app = new App().getApp();
 
 /**
  * Integration Test: Task List Display Flow
@@ -13,10 +12,13 @@ const app = new App().getApp();
 
 describe('Task List Display Flow - Integration Test', () => {
   let server;
+  let appInstance;
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
-    server = app.listen(0);
+    appInstance = new App();
+    await appInstance.initDatabase();
+    server = appInstance.getApp().listen(0);
   });
 
   afterAll(async () => {
@@ -35,31 +37,31 @@ describe('Task List Display Flow - Integration Test', () => {
     ];
 
     for (const taskData of tasks) {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .post('/api/tasks')
         .send(taskData);
       
       // 進捗設定（0以外の場合）
       if (taskData.progress > 0) {
-        await request(app)
+        await request(appInstance.getApp())
           .put(`/api/tasks/${response.body.id}`)
           .send({ progress: taskData.progress });
       }
     }
 
     // 1つのタスクを完了状態にする
-    const completedTaskResponse = await request(app)
+    const completedTaskResponse = await request(appInstance.getApp())
       .post('/api/tasks')
       .send({ title: '完了済みタスク', dueDate: '2025-09-10' });
     
-    await request(app)
+    await request(appInstance.getApp())
       .put(`/api/tasks/${completedTaskResponse.body.id}`)
       .send({ completed: true });
   });
 
   describe('ユーザーストーリー4: タスクの一覧表示', () => {
     it('すべてのタスクが一覧表示されること', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
@@ -82,7 +84,7 @@ describe('Task List Display Flow - Integration Test', () => {
     });
 
     it('デフォルト（作成日順）でソートされること', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
@@ -95,7 +97,7 @@ describe('Task List Display Flow - Integration Test', () => {
     });
 
     it('期限日順でソートできること', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks?orderBy=dueDate')
         .expect(200);
 
@@ -122,7 +124,7 @@ describe('Task List Display Flow - Integration Test', () => {
     });
 
     it('各タスクの状態と進捗が正しく表示されること', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
@@ -167,7 +169,7 @@ describe('Task List Display Flow - Integration Test', () => {
 
   describe('フィルタリング機能', () => {
     it('未完了タスクのみを表示できること', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks?completed=false')
         .expect(200);
 
@@ -178,7 +180,7 @@ describe('Task List Display Flow - Integration Test', () => {
     });
 
     it('完了済みタスクのみを表示できること', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks?completed=true')
         .expect(200);
 
@@ -196,7 +198,7 @@ describe('Task List Display Flow - Integration Test', () => {
       const promises = [];
       for (let i = 1; i <= 50; i++) {
         promises.push(
-          request(app)
+          request(appInstance.getApp())
             .post('/api/tasks')
             .send({ title: `パフォーマンステスト用タスク${i}` })
         );
@@ -206,7 +208,7 @@ describe('Task List Display Flow - Integration Test', () => {
 
       // 応答時間を測定
       const startTime = Date.now();
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
       const endTime = Date.now();
@@ -228,7 +230,7 @@ describe('Task List Display Flow - Integration Test', () => {
     });
 
     it('不正なクエリパラメータでもエラーにならないこと', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks?invalidParam=value&orderBy=invalid&completed=invalid')
         .expect(200);
 
@@ -239,18 +241,18 @@ describe('Task List Display Flow - Integration Test', () => {
   describe('空の状態の処理', () => {
     it('タスクが存在しない場合は空の配列を返すこと', async () => {
       // 全タスクを削除
-      const allTasks = await request(app)
+      const allTasks = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
       for (const task of allTasks.body) {
-        await request(app)
+        await request(appInstance.getApp())
           .delete(`/api/tasks/${task.id}`)
           .expect(204);
       }
 
       // 空の一覧を確認
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
@@ -260,7 +262,7 @@ describe('Task List Display Flow - Integration Test', () => {
 
   describe('日付表示フォーマット', () => {
     it('日付がISO 8601形式で返されること', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 

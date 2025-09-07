@@ -2,8 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import App from '../../src/app.js';
 
-const app = new App().getApp();
-
 /**
  * Contract Test: DELETE /api/tasks/:id
  * 
@@ -14,10 +12,13 @@ const app = new App().getApp();
 describe('DELETE /api/tasks/:id - Contract Test', () => {
   let server;
   let testTaskId;
+  let appInstance;
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
-    server = app.listen(0);
+    appInstance = new App();
+    await appInstance.initDatabase();
+    server = appInstance.getApp().listen(0);
   });
 
   afterAll(async () => {
@@ -28,7 +29,7 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
 
   beforeEach(async () => {
     // テスト用タスクを作成
-    const response = await request(app)
+    const response = await request(appInstance.getApp())
       .post('/api/tasks')
       .send({
         title: '削除対象テストタスク',
@@ -40,7 +41,7 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
 
   describe('正常な削除リクエスト', () => {
     it('既存のタスクを削除できること', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .delete(`/api/tasks/${testTaskId}`)
         .expect(204);
 
@@ -51,31 +52,31 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
 
     it('削除後にタスクが存在しないこと', async () => {
       // タスクを削除
-      await request(app)
+      await request(appInstance.getApp())
         .delete(`/api/tasks/${testTaskId}`)
         .expect(204);
 
       // 削除されたタスクにアクセスすると404が返ること
-      await request(app)
+      await request(appInstance.getApp())
         .get(`/api/tasks/${testTaskId}`)
         .expect(404);
     });
 
     it('削除後にタスク一覧から除外されること', async () => {
       // 削除前のタスク数を確認
-      const beforeResponse = await request(app)
+      const beforeResponse = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
       
       const beforeCount = beforeResponse.body.length;
 
       // タスクを削除
-      await request(app)
+      await request(appInstance.getApp())
         .delete(`/api/tasks/${testTaskId}`)
         .expect(204);
 
       // 削除後のタスク数を確認
-      const afterResponse = await request(app)
+      const afterResponse = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
@@ -88,19 +89,19 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
 
     it('複数のタスクが存在する場合、指定したタスクのみ削除されること', async () => {
       // 追加のタスクを作成
-      const otherTaskResponse = await request(app)
+      const otherTaskResponse = await request(appInstance.getApp())
         .post('/api/tasks')
         .send({ title: '削除されないタスク' });
       
       const otherTaskId = otherTaskResponse.body.id;
 
       // 最初のタスクを削除
-      await request(app)
+      await request(appInstance.getApp())
         .delete(`/api/tasks/${testTaskId}`)
         .expect(204);
 
       // 他のタスクは残っていること
-      const remainingTaskResponse = await request(app)
+      const remainingTaskResponse = await request(appInstance.getApp())
         .get(`/api/tasks/${otherTaskId}`)
         .expect(200);
 
@@ -113,7 +114,7 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
     it('存在しないタスクIDの場合は404エラーを返すこと', async () => {
       const nonExistentId = 99999;
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .delete(`/api/tasks/${nonExistentId}`)
         .expect('Content-Type', /json/)
         .expect(404);
@@ -126,7 +127,7 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
     it('不正なタスクIDの場合は400エラーを返すこと', async () => {
       const invalidId = 'invalid-id';
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .delete(`/api/tasks/${invalidId}`)
         .expect('Content-Type', /json/)
         .expect(400);
@@ -138,7 +139,7 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
     it('負の数のタスクIDの場合は400エラーを返すこと', async () => {
       const negativeId = -1;
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .delete(`/api/tasks/${negativeId}`)
         .expect('Content-Type', /json/)
         .expect(400);
@@ -149,7 +150,7 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
     it('ゼロのタスクIDの場合は400エラーを返すこと', async () => {
       const zeroId = 0;
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .delete(`/api/tasks/${zeroId}`)
         .expect('Content-Type', /json/)
         .expect(400);
@@ -161,12 +162,12 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
   describe('冪等性の検証', () => {
     it('同じタスクを2回削除しても2回目は404エラーを返すこと', async () => {
       // 1回目の削除（成功）
-      await request(app)
+      await request(appInstance.getApp())
         .delete(`/api/tasks/${testTaskId}`)
         .expect(204);
 
       // 2回目の削除（404エラー）
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .delete(`/api/tasks/${testTaskId}`)
         .expect('Content-Type', /json/)
         .expect(404);
@@ -178,7 +179,7 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
 
   describe('レスポンスヘッダー検証', () => {
     it('成功時のレスポンスヘッダーが正しいこと', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .delete(`/api/tasks/${testTaskId}`)
         .expect(204);
 
@@ -187,7 +188,7 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
     });
 
     it('エラー時のレスポンスヘッダーが正しいこと', async () => {
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .delete('/api/tasks/99999')
         .expect(404);
 
@@ -200,12 +201,12 @@ describe('DELETE /api/tasks/:id - Contract Test', () => {
       const deletedId = testTaskId;
 
       // タスクを削除
-      await request(app)
+      await request(appInstance.getApp())
         .delete(`/api/tasks/${deletedId}`)
         .expect(204);
 
       // 新しいタスクを作成
-      const newTaskResponse = await request(app)
+      const newTaskResponse = await request(appInstance.getApp())
         .post('/api/tasks')
         .send({ title: '新しいタスク' })
         .expect(201);

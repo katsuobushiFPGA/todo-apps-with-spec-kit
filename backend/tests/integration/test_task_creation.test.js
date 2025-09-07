@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import App from '../../src/app.js';
 
-const app = new App().getApp();
 
 /**
  * Integration Test: Task Creation Flow
@@ -13,10 +12,13 @@ const app = new App().getApp();
 
 describe('Task Creation Flow - Integration Test', () => {
   let server;
+  let appInstance;
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
-    server = app.listen(0);
+    appInstance = new App();
+    await appInstance.initDatabase();
+    server = appInstance.getApp().listen(0);
   });
 
   afterAll(async () => {
@@ -32,7 +34,7 @@ describe('Task Creation Flow - Integration Test', () => {
   describe('ユーザーストーリー1: タスクの作成', () => {
     it('新しいタスクを作成してリストに表示されること', async () => {
       // 1. 初期状態：空のタスク一覧
-      const initialResponse = await request(app)
+      const initialResponse = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
       
@@ -44,7 +46,7 @@ describe('Task Creation Flow - Integration Test', () => {
         dueDate: '2025-09-15'
       };
 
-      const createResponse = await request(app)
+      const createResponse = await request(appInstance.getApp())
         .post('/api/tasks')
         .send(taskData)
         .expect(201);
@@ -61,7 +63,7 @@ describe('Task Creation Flow - Integration Test', () => {
       expect(typeof taskId).toBe('number');
 
       // 4. タスク一覧に表示されることを確認
-      const listResponse = await request(app)
+      const listResponse = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
@@ -86,7 +88,7 @@ describe('Task Creation Flow - Integration Test', () => {
         title: 'シンプルなタスク'
       };
 
-      const createResponse = await request(app)
+      const createResponse = await request(appInstance.getApp())
         .post('/api/tasks')
         .send(taskData)
         .expect(201);
@@ -110,7 +112,7 @@ describe('Task Creation Flow - Integration Test', () => {
       
       // 複数タスクを順次作成
       for (const taskData of tasks) {
-        const response = await request(app)
+        const response = await request(appInstance.getApp())
           .post('/api/tasks')
           .send(taskData)
           .expect(201);
@@ -119,7 +121,7 @@ describe('Task Creation Flow - Integration Test', () => {
       }
 
       // 一覧取得して全てのタスクが表示されることを確認
-      const listResponse = await request(app)
+      const listResponse = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
@@ -141,7 +143,7 @@ describe('Task Creation Flow - Integration Test', () => {
       ];
 
       for (const invalidTask of invalidTasks) {
-        const response = await request(app)
+        const response = await request(appInstance.getApp())
           .post('/api/tasks')
           .send(invalidTask)
           .expect(400);
@@ -151,7 +153,7 @@ describe('Task Creation Flow - Integration Test', () => {
       }
 
       // エラーが発生してもタスクは作成されていないことを確認
-      const listResponse = await request(app)
+      const listResponse = await request(appInstance.getApp())
         .get('/api/tasks')
         .expect(200);
 
@@ -166,7 +168,7 @@ describe('Task Creation Flow - Integration Test', () => {
         dueDate: '2020-01-01'
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .post('/api/tasks')
         .send(taskData)
         .expect(201);
@@ -180,7 +182,7 @@ describe('Task Creation Flow - Integration Test', () => {
         dueDate: '2030-12-31'
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .post('/api/tasks')
         .send(taskData)
         .expect(201);

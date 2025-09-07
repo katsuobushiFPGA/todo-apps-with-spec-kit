@@ -26,6 +26,13 @@ describe('POST /api/tasks - Contract Test', () => {
     }
   });
 
+  beforeEach(async () => {
+    // 各テスト前にデータベースをクリーンアップ
+    const { getInstance } = require('../../src/services/DatabaseService');
+    const dbService = getInstance();
+    await dbService.db.exec('DELETE FROM tasks');
+  });
+
   describe('正常なリクエスト', () => {
     it('タスク内容のみでタスクを作成できること', async () => {
       const taskData = {

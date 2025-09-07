@@ -2,8 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import App from '../../src/app.js';
 
-const app = new App().getApp();
-
 /**
  * Contract Test: PUT /api/tasks/:id
  * 
@@ -14,10 +12,13 @@ const app = new App().getApp();
 describe('PUT /api/tasks/:id - Contract Test', () => {
   let server;
   let testTaskId;
+  let appInstance;
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
-    server = app.listen(0);
+    appInstance = new App();
+    await appInstance.initDatabase();
+    server = appInstance.getApp().listen(0);
   });
 
   afterAll(async () => {
@@ -28,7 +29,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
 
   beforeEach(async () => {
     // テスト用タスクを作成
-    const response = await request(app)
+    const response = await request(appInstance.getApp())
       .post('/api/tasks')
       .send({
         title: 'テスト用タスク',
@@ -44,7 +45,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         title: '更新されたタスクタイトル'
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -63,7 +64,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         dueDate: '2025-12-31'
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -79,7 +80,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         dueDate: null
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -93,7 +94,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         progress: 75
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -108,7 +109,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         progress: 100
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -123,7 +124,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         completed: true
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -140,7 +141,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         progress: 50
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -159,7 +160,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         title: '存在しないタスクの更新'
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${nonExistentId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -175,7 +176,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         title: '不正IDでの更新'
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${invalidId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -189,7 +190,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         title: ''
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -204,7 +205,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         title: 'あ'.repeat(501)
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -219,7 +220,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
       for (const progress of invalidProgresses) {
         const updateData = { progress };
 
-        const response = await request(app)
+        const response = await request(appInstance.getApp())
           .put(`/api/tasks/${testTaskId}`)
           .send(updateData)
           .expect('Content-Type', /json/)
@@ -234,7 +235,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         dueDate: '無効な日付'
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect('Content-Type', /json/)
@@ -252,7 +253,7 @@ describe('PUT /api/tasks/:id - Contract Test', () => {
         progress: 30
       };
 
-      const response = await request(app)
+      const response = await request(appInstance.getApp())
         .put(`/api/tasks/${testTaskId}`)
         .send(updateData)
         .expect(200);
